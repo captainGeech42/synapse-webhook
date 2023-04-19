@@ -1,0 +1,42 @@
+init {
+    if $cmdopts.debug { $lib.debug = $lib.true }
+
+    $api = $lib.import(zw.sinkdb.api, debug=$lib.debug)
+    $privsep = $lib.import(zw.sinkdb.privsep, debug=$lib.debug)
+
+    if ($cmdopts.no_awareness and $cmdopts.no_scanners and $cmdopts.no_sinkholes) {
+        $lib.warn("no categories of sinkdb data enabled for import")
+    }
+
+    $recordsToModel = ([])
+
+    if (not $cmdopts.no_awareness) {
+        if $lib.debug { $lib.print("fetching awareness indicators") }
+        $data = $api.exportIndicators(awareness, $cmdopts.asof)
+        if (not $data) {
+            $lib.warn("failed to get awareness data from sinkdb")
+        }
+        $recordsToModel.extend($data)
+    }
+
+    if (not $cmdopts.no_scanners) {
+        if $lib.debug { $lib.print("fetching scanner indicators") }
+        $data = $api.exportIndicators(scanners, $cmdopts.asof)
+        if (not $data) {
+            $lib.warn("failed to get scanner data from sinkdb")
+        }
+        $recordsToModel.extend($data)
+    }
+
+    if (not $cmdopts.no_sinkholes) {
+        if $lib.debug { $lib.print("fetching sinkhole indicators") }
+        $data = $api.exportIndicators(sinkholes, $cmdopts.asof)
+        if (not $data) {
+            $lib.warn("failed to get sinkhole data from sinkdb")
+        }
+        $recordsToModel.extend($data)
+    }
+    
+    $lib.print("modeling {d} records from sinkdb", d=$recordsToModel.size())
+    divert $cmdopts.yield $privsep.modelExportResponse($recordsToModel)
+}

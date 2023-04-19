@@ -1,0 +1,131 @@
+name: zw-sinkdb
+version: 1.1.0
+synapse_minversion: [2, 117, 0]
+desc: The zw-sinkdb package provides commands to ingest and model data from SinkDB (sinkdb.abuse.ch).
+
+author:
+  url: https://zanderwork.com/
+  name: Zander Work
+
+genopts:
+  dotstorm: true
+
+perms:
+  - perm: [zw, sinkdb, user]
+    desc: Allows a user to lookup indicators on SinkDB
+    gate: cortex
+  - perm: [zw, sinkdb, admin]
+    desc: Allows a user to bulk import the listable IOCs on SinkDB, and make global configuration changes
+    gate: cortex
+
+modules:
+  - name: zw.sinkdb.api
+  - name: zw.sinkdb.privsep
+    modconf:
+      source: a9fc8fc6af73f0bf2dda26961f50cfe6
+    asroot:perms:
+      - [zw, sinkdb, user]
+
+commands:
+  - name: zw.sinkdb.setup.apikey
+    descr: Set the SinkDB HTTPS API key
+    perms:
+      - [zw, sinkdb, user]
+    cmdargs:
+      - - apikey
+        - type: str
+          help: The SinkDB HTTPS API key
+      - - --self
+        - type: bool
+          default: false
+          action: store_true
+          help: Set the key as a user variable. If not used, the key is set globally.
+  
+  - name: zw.sinkdb.setup.tagprefix
+    descr: "Set the SinkDB tag tree prefix (default: `rep.sinkdb`). Note that this won't migrate any existing tags under the previous prefix."
+    perms:
+      - [zw, sinkdb, admin]
+    cmdargs:
+      - - tagname
+        - type: str
+          help: The tag prefix to use
+
+  - name: zw.sinkdb.lookup
+    descr: Lookup an indicator on SinkDB
+    perms:
+      - [zw, sinkdb, user]
+    cmdargs:
+      - - --asof
+        - type: str
+          default: -30days
+          help: Specify the maximum age for a cached result. To disable caching, use --asof now.
+      - - --debug
+        - type: bool
+          default: false
+          action: store_true
+          help: Show verbose debug output.
+    forms:
+      input:
+        - inet:email
+        - inet:fqdn
+        - inet:ipv4
+      output:
+        - inet:email
+        - inet:fqdn
+        - inet:ipv4
+
+  - name: zw.sinkdb.import
+    descr: Import the listable indicators on SinkDB. By default, imports the sinkhole, phishing awareness, and scanner indicators.
+    perms:
+      - [zw, sinkdb, admin]
+    forms:
+      output:
+        - inet:email
+        - inet:fqdn
+        - inet:ipv4
+        - inet:ipv6
+        - inet:cidr4
+        - inet:cidr6
+        - inet:url
+        - it:dev:str
+    cmdargs:
+      - - --asof
+        - type: str
+          default: -30days
+          help: Specify the maximum age for a cached result. To disable caching, use --asof now.
+      - - --debug
+        - type: bool
+          default: false
+          action: store_true
+          help: Show verbose debug output.
+      - - --yield
+        - type: bool
+          default: false
+          action: store_true
+          help: Yield the newly created nodes.
+      - - --no-awareness
+        - type: bool
+          default: false
+          action: store_true
+          help: Don't import the awareness indicators.
+      - - --no-scanners
+        - type: bool
+          default: false
+          action: store_true
+          help: Don't import the scanner indicators.
+      - - --no-sinkholes
+        - type: bool
+          default: false
+          action: store_true
+          help: Don't import the sinkholes indicators.
+
+optic:
+  actions:
+    - name: SinkDB Lookup
+      storm: zw.sinkdb.lookup
+      descr: Enrich a node with SinkDB data
+      forms: [ inet:ipv4, inet:fqdn, inet:email ]
+    - name: SinkDB Lookup (no cache)
+      storm: zw.sinkdb.lookup --asof now
+      descr: Enrich a node with SinkDB data, ignoring any cached data
+      forms: [ inet:ipv4, inet:fqdn, inet:email ]
