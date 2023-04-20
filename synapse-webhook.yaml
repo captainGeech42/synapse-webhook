@@ -60,6 +60,11 @@ commands:
           default: false
           action: store_true
           help: Replace "http" with "hxxp" and "." with "[.]".
+      - - --no-verify
+        - type: bool
+          default: true
+          action: store_false
+          help: Ignore SSL verification errors.
       - - name
         - type: str
           help: Name of the webhook to use
