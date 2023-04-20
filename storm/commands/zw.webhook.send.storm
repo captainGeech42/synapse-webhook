@@ -1,0 +1,7 @@
+init {
+    if $cmdopts.debug { $lib.debug = $lib.true }
+
+    $privsep = $lib.import(zw.webhooks.privsep, debug=$lib.debug)
+}
+
+$privsep.callWebhook($cmdopts.name, $cmdopts.mesg, $cmdopts.defang)

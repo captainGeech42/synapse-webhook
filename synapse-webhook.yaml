@@ -1,0 +1,77 @@
+name: zw-webhook
+version: 1.0.0
+synapse_minversion: [2, 129, 0]
+desc: The zw-webhook package provides commands to interact with common third-party messaging platforms (Slack, Teams, and Discord) through their webhook APIs.
+
+author:
+  url: https://zanderwork.com/
+  name: Zander Work
+
+genopts:
+  dotstorm: true
+
+perms:
+  - perm: [zw, webhook, user]
+    desc: Allows a user to leverage the zw-webhook package
+    gate: cortex
+  - perm: [zw, webhook, admin]
+    desc: Allows a user to delete any webhook
+    gate: cortex
+
+modules:
+  - name: zw.webhook.privsep
+    asroot:perms:
+      - [zw, webhook, user]
+
+commands:
+  - name: zw.webhook.add
+    descr: Add a new webhook
+    perms:
+      - [zw, webhook, user]
+    cmdargs:
+      - - --service
+        - type: str
+          default: auto
+          help: "Service to use this webhook for. If unset (or set to auto), service is determined based on webhook URL. Valid options are: auto, discord, slack, teams."
+      - - --global
+        - type: bool
+          default: false
+          action: store_true
+          help: Make webhook available to all users. By default, only available to the user who created it.
+      - - name
+        - type: str
+          help: Name of the webhook (must be unique)
+      - - url
+        - type: str
+          help: URL of the webhook
+  
+  - name: zw.webhook.send
+    descr: Send a message using the webhook
+    perms:
+      - [zw, webhook, user]
+    cmdargs:
+      - - --debug
+        - type: bool
+          default: false
+          action: store_true
+          help: Show verbose debug output.
+      - - --defang
+        - type: bool
+          default: false
+          action: store_true
+          help: Replace "http" with "hxxp" and "." with "[.]".
+      - - name
+        - type: str
+          help: Name of the webhook to use
+      - - mesg
+        - type: str
+          help: Message to send
+  
+  - name: zw.webhook.delete
+    descr: Delete a webhook. Requires zw.webhook.admin if the webhook isn't yours.
+    perms:
+      - [zw, webhook, user]
+    cmdargs:
+      - - name
+        - type: str
+          help: Name of the webhook to delete

@@ -1,2 +1,2 @@
-synapse
+synapse>=2.129.0
 pytest

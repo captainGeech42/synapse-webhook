@@ -1,0 +1,126 @@
+// Prefix for globals keys
+$__varsPrefix = "zw.webhook:entry"
+
+// Fatal error
+function __error($mesg) {
+    $lib.raise("zw-webhook", $mesg)
+}
+
+// Get the full key name for $lib.globals
+function __getGlobalsKey($suffix) {
+    return(`{$__varsPrefix}:{$suffix}`)
+}
+
+// Detect the service for a webhook
+// Return the service string if successful, otherwise $lib.null
+function __detectWebhookService($url) {
+    if ($url.find(".slack.com") != $lib.null) {
+        return(slack)
+    }
+
+    if ($url.find(".discord.com") != $lib.null) {
+        return(discord)
+    }
+
+    if ($url.find(".office.") != $lib.null or $url.find("microsoft") != $lib.null) {
+        return(teams)
+    }
+
+    return($lib.null)
+}
+
+// Add the webhook
+function addWebhook($name, $url, $service, $global) {
+    // Get the service name if not specified
+    if ($service = "auto") {
+        $service = $__detectWebhookService($url)
+        if ($service = $lib.null) {
+            $__error(`Failed to detect webhook service for: {$url}`)
+        }
+    }
+
+    $key = $__getGlobalsKey($name)reocn
+
+    // Make sure no webhook exists with that name
+    if ($lib.globals.get($key) != $lib.null) {
+        $__error(`A webhook already exists with this name: {$name}`)
+    }
+
+    // Save the webhook
+    $lib.globals.set($key, ({
+        owner: $lib.user.name()
+        url: $url,
+        service: $service,
+        global: $global
+    }))
+
+    $lib.print(`Webhook added: {$name}`)
+}
+
+// Make a Discord-style webhook call
+function doDiscordWebhook($url, $mesg) {
+    $mesgTrunc = $mesg.slice(0, 2000)
+    if ($mesg != $mesgTrunc) {
+        $lib.warn("Truncating message to 2000 characters")
+    }
+
+    $resp = $lib.inet.http.post($url, json=({content: $mesgTrunc}))
+}
+
+// Make a Slack-style webhook call
+function doSlackWebhook($url, $mesg) {
+    $resp = $lib.inet.http.post($url, json=({text: $mesg}))
+}
+
+// Make a Teams-style webhook call
+function doTeamsWebhook($url, $mesg) {
+    $resp = $lib.inet.http.post($url, json=({text: $mesg}))
+}
+
+// Call a webhook
+function callWebhook($name, $mesg, $defang) {
+    $key = $__getGlobalsKey($name)
+
+    // Check if the webhook exists
+    $entry = $lib.globals.get($key)
+    if ($entry = $lib.null) {
+        $__error(`No webhook found with this name: {$name}`)
+    }
+
+    if ($lib.user.name() != $entry.owner and not $entry.global) {
+        $__error(`Not authorized to use this webhook. Owned by: {$entry.owner}`)
+    }
+
+    if ($defang) {
+        $mesg = $mesg.replace("http", "hxxp").replace(".", "[.]")
+    }
+
+    switch $entry.service {
+        "discord": { $doDiscordWebhook($entry.url, $mesg) }
+        "slack": { $doSlackWebhook($entry.url, $mesg) }
+        "teams": { $doTeamsWebhook($entry.url, $mesg) }
+        *: { $__error(`Unsupported webhook service for {$name}: {$entry.service}`) }
+    }
+
+    if $lib.debug { $lib.print("Successfully called webhook") }
+}
+
+// Delete a webhook
+function deleteWebhook($name) {
+    $key = $__getGlobalsKey($name)
+
+    // Check if the webhook exists
+    $entry = $lib.globals.get($key)
+    if ($entry = $lib.null) {
+        $__error(`No webhook found with this name: {$name}`)
+    }
+
+    // Check if allowed
+    $user = $lib.auth.users.get($lib.user.iden)
+    if ($entry.owner != $lib.user.name() and not $user.allowed(zw.webhook.admin)) {
+        $__error(`Not allowed to delete webhook '{$name}'! Owned by: {$entry.owner}`)
+    }
+
+    $lib.globals.pop($key)
+    $lib.print(`Webhook deleted: {$name}`)
+}
