@@ -21,7 +21,7 @@ jobs:
       run: python -m pip install -r requirements.txt
 
     - name: Build release JSON blob
-      run: python -m synapse.tools.genpkg --save synapse_wehook.json synapse-webhook.yaml
+      run: python -m synapse.tools.genpkg --save synapse_webhook.json synapse-webhook.yaml
 
     - name: Get tag
       id: get_tag
@@ -44,8 +44,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./synapse_wehook.json
-        asset_name: synapse_wehook.json
+        asset_path: ./synapse_webhook.json
+        asset_name: synapse_webhook.json
         asset_content_type: application/json
     
     - name: Publish release
