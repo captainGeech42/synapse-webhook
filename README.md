@@ -32,7 +32,7 @@ zw.webhook.send  : Send a message using the webhook
 For detailed help on any command, use <cmd> --help
 ```
 
-First, add a webhook:
+First, add a webhook. Names are unique across the entire cortex.
 ```
 storm> zw.webhook.add myslack https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX
 Webhook added for service "slack": myslack
@@ -62,6 +62,36 @@ storm> [inet:url=http://google.com inet:url=http://bing.com] | zw.webhook.send -
 ```
 
 ![Slack defanged example](/imgs/slack_defanged.png)
+
+You can list the accessible webhooks (yours + global), or all of them with admin:
+```
+storm> zw.webhook.list
+Webhook: myslack
+    Owner: geech
+    Service: slack
+    Global: False
+    URL: https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX
+
+storm> zw.webhook.list --all
+Webhook: myslack
+    Owner: geech
+    Service: slack
+    Global: False
+    URL: https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX
+
+Webhook: secretslack
+    Owner: admin123
+    Service: slack
+    Global: False
+    URL: https://hooks.slack.com/services/T11112321213/B98989898989/YYYYYYYYYYYYYYYYYY
+
+```
+
+Finally, you can delete your own webhooks, or with admin privs you can delete anyone's:
+```
+storm> zw.webhook.delete myslack
+Webhook deleted: myslack
+```
 
 ## Administration
 
