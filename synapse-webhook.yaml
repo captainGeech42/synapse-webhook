@@ -15,7 +15,7 @@ perms:
     desc: Allows a user to leverage the zw-webhook package
     gate: cortex
   - perm: [zw, webhook, admin]
-    desc: Allows a user to delete any webhook
+    desc: Allows a user to view, use, and delete any webhook
     gate: cortex
 
 modules:
@@ -80,3 +80,14 @@ commands:
       - - name
         - type: str
           help: Name of the webhook to delete
+ 
+  - name: zw.webhook.list
+    descr: List the configured webhooks
+    perms:
+      - [zw, webhook, user]
+    cmdargs:
+      - - --all
+        - type: bool
+          default: false
+          action: store_true
+          help: Show all webhooks (requires zw.webhook.admin).

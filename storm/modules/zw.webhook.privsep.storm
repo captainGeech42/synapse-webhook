@@ -46,6 +46,12 @@ function addWebhook(name, url, service, global) {
         }
     }
 
+    // Normalize webhook name
+    ($ok, $name) = $lib.trycast(syn:tag:part, $name)
+    if (not $ok) {
+        $__error(`Failed to normalize webhook name: {$name}`)
+    }
+
     $key = $__getGlobalsKey($name)
 
     // Make sure no webhook exists with that name
@@ -73,17 +79,27 @@ function doDiscordWebhook(url, mesg, verify_ssl) {
 
     $resp = $lib.inet.http.post($url, json=({"content": $mesgTrunc}), ssl_verify=$verify_ssl)
 
-    if $lib.debug { $lib.print($resp) }
+    if (not ($resp.code >= 200 and $resp.code < 300)) {
+        $lib.warn(`Error sending Discord webhook message: {$resp}`)
+    }
 }
 
 // Make a Slack-style webhook call
 function doSlackWebhook(url, mesg, verify_ssl) {
-    $resp = $lib.inet.http.post($url, json=({"text": $mesg}))
+    $resp = $lib.inet.http.post($url, json=({"text": $mesg}), ssl_verify=$verify_ssl)
+
+    if (not ($resp.code >= 200 and $resp.code < 300)) {
+        $lib.warn(`Error sending Slack webhook message: {$resp}`)
+    }
 }
 
 // Make a Teams-style webhook call
 function doTeamsWebhook(url, mesg, verify_ssl) {
-    $resp = $lib.inet.http.post($url, json=({"text": $mesg}))
+    $resp = $lib.inet.http.post($url, json=({"text": $mesg}), ssl_verify=$verify_ssl)
+
+    if (not ($resp.code >= 200 and $resp.code < 300)) {
+        $lib.warn(`Error sending Teams webhook message: {$resp}`)
+    }
 }
 
 // Call a webhook
@@ -96,14 +112,17 @@ function callWebhook(name, mesg, defang, verify_ssl) {
         $__error(`No webhook found with this name: {$name}`)
     }
 
+    // Ensure we own the webhook or anyone can use it
     if ($lib.user.name() != $entry.owner and not $entry.global) {
         $__error(`Not authorized to use this webhook. Owned by: {$entry.owner}`)
     }
 
+    // Defang URLs if requested
     if ($defang) {
         $mesg = $mesg.replace("http", "hxxp").replace(".", "[.]")
     }
 
+    // Make the webhook call
     switch $entry.service {
         "discord": { $doDiscordWebhook($entry.url, $mesg, $verify_ssl) }
         "slack": { $doSlackWebhook($entry.url, $mesg, $verify_ssl) }
@@ -112,6 +131,8 @@ function callWebhook(name, mesg, defang, verify_ssl) {
     }
 
     if $lib.debug { $lib.print("Successfully called webhook") }
+
+    return()
 }
 
 // Delete a webhook
@@ -132,4 +153,34 @@ function deleteWebhook(name) {
 
     $lib.globals.pop($key)
     $lib.print(`Webhook deleted: {$name}`)
+}
+
+// List the webhooks
+function listWebhooks(show_all) {
+    // Check if allowed to list all webhooks
+    if $show_all {
+        $user = $lib.auth.users.get($lib.user.iden)
+        if (not $user.allowed(zw.webhook.admin)) {
+            $__error("Not allowed to list all webhooks!")
+        }
+    }
+
+    // Iterate over all global enties
+    for ($key, $value) in $lib.globals.list() {
+        // Check if the key is a webhook from this package
+        if ($key.startswith($__varsPrefix)) {
+            // If we aren't showing all webhooks, make sure we own the webhook
+            if (not $show_all and $value.owner != $lib.user.name()) {
+                continue
+            }
+
+            $name = $key.split(":").index(-1)
+            $lib.print(`Webhook: {$name}`)
+            $lib.print(`    Owner: {$value.owner}`)
+            $lib.print(`    Service: {$value.service}`)
+            $lib.print(`    Global: {$value.global}`)
+            $lib.print(`    URL: {$value.url}`)
+            $lib.print("")
+        }
+    }
 }

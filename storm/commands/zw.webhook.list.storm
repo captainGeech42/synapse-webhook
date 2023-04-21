@@ -1,0 +1,5 @@
+init {
+    $privsep = $lib.import(zw.webhook.privsep, debug=$lib.debug)
+
+    $privsep.listWebhooks($cmdopts.all)
+}

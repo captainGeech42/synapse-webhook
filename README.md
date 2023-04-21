@@ -1,7 +1,9 @@
 # synapse-webhook
 [![Tests](https://github.com/captainGeech42/synapse-webhook/actions/workflows/test.yml/badge.svg)](https://github.com/captainGeech42/synapse-webhook/actions/workflows/test.yml) [![Release](https://github.com/captainGeech42/synapse-webhook/actions/workflows/release.yml/badge.svg)](https://github.com/captainGeech42/synapse-webhook/actions/workflows/release.yml) [![GitHub Release](https://img.shields.io/github/release/captainGeech42/synapse-webhook.svg?style=flat)](https://github.com/captainGeech42/synapse-webhook/releases)
 
-Synapse Rapid Power-up for interacting with third-party services through webhooks 
+Synapse Rapid Power-up for interacting with third-party services through webhooks.
+
+Currently supports Discord, Slack, and Microsoft Teams.
 
 ## Install
 
@@ -20,22 +22,55 @@ $ python -m synapse.tools.genpkg --push aha://mycortex synapse-webhook.yaml
 ## Usage
 
 ```
-storm> zw.webhook.add --help
+storm> help zw.webhook
+package: zw-webhook
+zw.webhook.add   : Add a new webhook
+zw.webhook.delete: Delete a webhook. Requires zw.webhook.admin if the webhook isn't yours.
+zw.webhook.list  : List the configured webhooks
+zw.webhook.send  : Send a message using the webhook
+
+For detailed help on any command, use <cmd> --help
 ```
 
-example: sinkdb import and webhook notify of the new ones
+First, add a webhook:
+```
+storm> zw.webhook.add myslack https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX
+Webhook added for service "slack": myslack
+
+// You can add --global to make it available for anyone to use
+storm> zw.webhook.add --global globalslack https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX
+Webhook added for service "slack": globalslack
+
+// You can override the service detection with --service
+storm> zw.webhook.add --service teams notslack https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX
+Webhook added for service "teams": notslack
+```
+
+Then, you can send messages to it:
+```
+storm> zw.webhook.send myslack "hello from synapse!"
+
+// You can pipeline in nodes as well
+storm> [inet:url=http://google.com inet:url=http://bing.com] | zw.webhook.send myslack `Sus url to investigate! {$node.value()}` | spin
+```
+
+![Slack example](/imgs/slack.png)
+
+You can also defang URLs:
+```
+storm> [inet:url=http://google.com inet:url=http://bing.com] | zw.webhook.send --defang myslack `Sus url to investigate! {$node.value()}` | spin
+```
+
+![Slack defanged example](/imgs/slack_defanged.png)
 
 ## Administration
 
 This package exposes two permissions:
 
 * `zw.webhook.user`: Allows the use of this package
-* `zw.webhook.admin`: Allows deleting anyone's webhooks
+* `zw.webhook.admin`: Allows deleting anyone's webhooks and listing all webhooks.
 
 ## Running the test suite
-
-use the lib_stormhttp.py test code to make a fake http server
-have a switch to hardcode the webhook type or autodetect. use that to force it to do certain things
 
 ```
 $ pip install -r requirements.txt
