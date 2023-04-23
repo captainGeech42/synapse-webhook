@@ -47,10 +47,11 @@ function addWebhook(name, url, service, global) {
     }
 
     // Normalize webhook name
-    ($ok, $name) = $lib.trycast(syn:tag:part, $name)
+    ($ok, $newname) = $lib.trycast(syn:tag:part, $name)
     if (not $ok) {
         $__error(`Failed to normalize webhook name: {$name}`)
     }
+    $name = $newname
 
     $key = $__getGlobalsKey($name)
 
