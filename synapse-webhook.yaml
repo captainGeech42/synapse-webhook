@@ -1,5 +1,5 @@
 name: zw-webhook
-version: 1.0.0
+version: 1.0.2
 synapse_minversion: [2, 129, 0]
 desc: The zw-webhook package provides commands to interact with common third-party messaging platforms (Slack, Teams, and Discord) through their webhook APIs.
 
