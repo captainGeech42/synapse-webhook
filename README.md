@@ -93,6 +93,33 @@ storm> zw.webhook.delete myslack
 Webhook deleted: myslack
 ```
 
+## Example: New Sinkholes
+
+Leveraging another package I wrote, [synapse-sinkdb](https://github.com/captainGeech42/synapse-sinkdb), you can automatically model new sinkholes and notify a webhook of new entries:
+
+```
+// add the webhook
+zw.webhook.add sinkdb <webhook url>
+
+// add the cronjob
+cron.add --day +7 --name "Model sinkholes and send new ones to a webhook" {
+    init { $mint=$lib.cast(time, -7days) }
+
+    // download new sinkholes
+    zw.sinkdb.import --asof -7days --yield |
+
+    // filter for only sinkholes that were first created in the last 7 days
+    +#rep.sinkdb.sinkhole@=($mint,now) +$((#rep.sinkdb.sinkhole).0 > $mint)
+    
+    // filter out IP addresses that were modeled from a network range
+    -(inet:ipv4 and #rep.sinkdb.type.ipv4_range)
+    -(inet:ipv6 and #rep.sinkdb.type.ipv6_range) |
+    
+    // send the sinkhole to the webhook
+    zw.webhook.send sinkdb `New sinkhole observed! {$node.repr()}`
+}
+```
+
 ## Administration
 
 This package exposes two permissions:
