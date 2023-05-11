@@ -2,7 +2,7 @@
 $__varsPrefix = "zw.webhook:entry"
 
 // Valid services
-$__validServices = $lib.set("discord", "slack", "teams")
+$__validServices = $lib.set("discord", "slack", "teams", "keybase")
 
 // Fatal error
 function __error(mesg) {
@@ -23,6 +23,10 @@ function __detectWebhookService(url) {
 
     if ($url.find("discord.com") != $lib.null) {
         return(discord)
+    }
+
+    if ($url.find("keybase.io") != $lib.null) {
+        return(keybase)
     }
 
     if ($url.find("office") != $lib.null or $url.find("microsoft") != $lib.null) {
@@ -103,6 +107,20 @@ function doTeamsWebhook(url, mesg, verify_ssl) {
     }
 }
 
+// Make a Keybase-style webhook call
+function doKeybaseWebhook(url, mesg, verify_ssl) {
+    $mesgTrunc = $mesg.slice(0, 10000)
+    if ($mesg != $mesgTrunc) {
+        $lib.warn("Truncating message to 10000 characters")
+    }
+
+    $resp = $lib.inet.http.post($url, json=({"msg": $mesgTrunc}), ssl_verify=$verify_ssl)
+
+    if (not ($resp.code >= 200 and $resp.code < 300)) {
+        $lib.warn(`Error sending Keybase webhook message: {$resp}`)
+    }
+}
+
 // Call a webhook
 function callWebhook(name, mesg, defang, verify_ssl) {
     $key = $__getGlobalsKey($name)
@@ -128,6 +146,7 @@ function callWebhook(name, mesg, defang, verify_ssl) {
         "discord": { $doDiscordWebhook($entry.url, $mesg, $verify_ssl) }
         "slack": { $doSlackWebhook($entry.url, $mesg, $verify_ssl) }
         "teams": { $doTeamsWebhook($entry.url, $mesg, $verify_ssl) }
+        "keybase": { $doKeybaseWebhook($entry.url, $mesg, $verify_ssl) }
         *: { $__error(`Unsupported webhook service for {$name}: {$entry.service}`) }
     }
 
