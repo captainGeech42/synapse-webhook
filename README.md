@@ -3,7 +3,7 @@
 
 Synapse Rapid Power-up for interacting with third-party services through webhooks.
 
-Currently supports Discord, Slack, and Microsoft Teams.
+Currently supports Discord, Slack, Keybase and Microsoft Teams.
 
 ## Install
 

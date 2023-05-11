@@ -167,7 +167,7 @@ class SynapseWebhookTest(s_test.SynTest):
             await core.callStorm(f"zw.webhook.add --service discord d1 https://root:root@127.0.0.1:{port}/discord")
             await core.callStorm(f"zw.webhook.add --service slack --global s1 https://root:root@127.0.0.1:{port}/slack")
             await core.callStorm(f"zw.webhook.add --service teams t1 https://root:root@127.0.0.1:{port}/teams")
-            await core.callStorm(f"zw.webhook.add --service teams k1 https://root:root@127.0.0.1:{port}/keybase")
+            await core.callStorm(f"zw.webhook.add --service keybase k1 https://root:root@127.0.0.1:{port}/keybase")
 
             self.stormHasNoWarnErr(await core.stormlist("zw.webhook.send --no-verify d1 hello"))
             self.eq(DiscordApiMock.counter, 1)
