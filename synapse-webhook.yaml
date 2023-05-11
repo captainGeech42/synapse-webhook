@@ -1,7 +1,7 @@
 name: zw-webhook
-version: 1.0.2
+version: 1.0.3
 synapse_minversion: [2, 129, 0]
-desc: The zw-webhook package provides commands to interact with common third-party messaging platforms (Slack, Teams, and Discord) through their webhook APIs.
+desc: The zw-webhook package provides commands to interact with common third-party messaging platforms (Slack, Teams, Discord and Keybase) through their webhook APIs.
 
 author:
   url: https://zanderwork.com/
@@ -32,7 +32,7 @@ commands:
       - - --service
         - type: str
           default: auto
-          help: "Service to use this webhook for. If unset (or set to auto), service is determined based on webhook URL. Valid options are: auto, discord, slack, teams."
+          help: "Service to use this webhook for. If unset (or set to auto), service is determined based on webhook URL. Valid options are: auto, discord, slack, teams, keybase."
       - - --global
         - type: bool
           default: false
